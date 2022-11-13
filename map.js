@@ -155,6 +155,78 @@ JF.getFormSubmissions("223104390365146", function (response) {
       });
     }
 
+    // create “current location” function, which doesn’t trigger until called upon.
+    function addUserLocation(latitude, longitude) {
+      return map.addLayer(
+        new MapboxLayer({
+          id: "user-location",
+          type: ScatterplotLayer,
+          data: [{ longitude, latitude }],
+          getPosition: (d) => [d.longitude, d.latitude],
+          getSourceColor: [0, 255, 0],
+          sizeScale: 15,
+          getSize: 10,
+          radiusUnits: "pixels",
+          getRadius: 5,
+          opacity: 0.7,
+          stroked: false,
+          filled: true,
+          radiusScale: 3,
+          getFillColor: [3, 202, 252],
+          parameters: {
+            depthTest: false,
+          },
+        })
+      );
+    }
+ 
+    // get current location
+    const successCallback = (position) => {
+      // add new point layer of current location to deck gl
+      const { latitude, longitude } = position.coords;
+      addUserLocation(latitude, longitude);
+    };
+ 
+    const errorCallback = (error) => {
+      console.log(error);
+    };
+ 
+// create async function to await for current location and then return the promise as lat long coordinates then resolve the promise
+    function getCurrentLocation() {
+      const currentLocation = navigator.geolocation.getCurrentPosition(
+        successCallback,
+        errorCallback
+      );
+      return currentLocation;
+    }
+    if (navigator.geolocation) {
+      getCurrentLocation();
+    }
+    const locationButton = document.createElement("div");
+    // create a button that will request the users location
+    locationButton.textContent = "Where am I?";
+    locationButton.id = "location-button";
+    locationButton.addEventListener("click", () => {
+      // when clicked, get the users location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const { latitude, longitude } = position.coords;
+ 
+          locationButton.textContent =
+            "Where am I? " +
+            position.coords.latitude.toFixed(3) +
+            ", " +
+            position.coords.longitude.toFixed(3);
+ 
+          addUserLocation(latitude, longitude);
+          flyToClick([longitude, latitude]);
+        });
+      }
+    });
+ 
+    // append the button
+    document.body.appendChild(locationButton);
+
    });
  
 });
